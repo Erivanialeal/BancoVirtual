@@ -1,85 +1,127 @@
 package src.model;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.List;
 
 public class Conta {
+    // atributos
+    private String numero;
+    private BigDecimal saldo;
+    private Cliente titular;
+    private StatusConta status;
+    private List<Transacao> transacoes;
 
-    private double saldo;
-    private Cliente cliente;
-    private int numeroConta;
-    ArrayList<String> transacoes;
-
-    public Conta(Cliente cliente, int numeroConta) {
-        this.saldo = 0.0;
-        this.cliente = cliente;
-        this.numeroConta = numeroConta;
+    public Conta(String numero, Cliente titular) {
+        this.numero = numero;
+        this.saldo = BigDecimal.ZERO;
+        this.titular = titular;
+        this.status = StatusConta.ATIVA;
         this.transacoes = new ArrayList<>();
+    }
+
+    public enum StatusConta {
+        ATIVA,
+        INATIVA,
+        BLOQUEADA,
+        ENCERRADA;
 
     }
 
-    public double getSaldo() {
+    public String getNumero() {
+        return numero;
+    }
+
+    public BigDecimal getSaldo() {
         return saldo;
     }
 
-    public Cliente getCliente() {
-        return cliente;
+    public Cliente getTitular() {
+        return titular;
     }
 
-    public int getNumeroConta() {
-        return numeroConta;
+    public StatusConta getStatus() {
+        return status;
     }
 
-    public void setCliente(Cliente cliente) {
-        this.cliente = cliente;
+    public List<Transacao> getTransacoes() {
+        return transacoes;
     }
 
-    public void depositar(double valor) {
-        if (valor > 0) {
-            this.saldo += valor;
-            transacoes.add("Saque: - R$ " + valor);
-            System.out.println("Deposito realizado com sucesso!");
-        } else {
-            System.out.println("Erro o valor do Deposito deve ser positivo.");
+    public void setTitular(Cliente titular) {
+        this.titular = titular;
+    }
+
+    public void setStatus(StatusConta status) {
+        this.status = status;
+    }
+
+    // metado para validar valor de deposito
+    public void validarValorDeposito(BigDecimal valor) {
+        // indentificador de conta
+        // status da conta
+        if (status != StatusConta.ATIVA) {
+            throw new IllegalStateException("Conta não está ativa");
         }
-    }
-
-    public void sacar(double valor) {
-        // valor inválido
-        if (valor <= 0) {
-            return;
+        // valor não pode ser nullo
+        if (valor == null) {
+            throw new IllegalArgumentException("Valor não pode ser nulo");
         }
-        // saldo insuficiente
-        if (valor > saldo) {
-            System.out.println("Saldo insuficiente para essa operação.");
-            return;
+        // valor não pode ser menor que zero
+        if (valor.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("Valor deve ser maior que zero!");
+        }
+        // validar as casas decimais
+        if (valor.scale() > 2) {
+            throw new IllegalArgumentException("Máxio duas casas decimais!");
+        }
+        // limitar o deposito
+        if (valor.compareTo(RegrasBanco.LIMITE_DEPOSITO) > 0) {
+            throw new IllegalArgumentException("Limite de depoisto atigindo!");
+        }
+        // registra transações
+
+    }
+
+    public void depositar(BigDecimal valor) {
+        validarValorDeposito(valor);
+        saldo = saldo.add(valor);
+    }
+
+    // metado para validar valor de saque
+    public void validarValorSaque(BigDecimal valor) {
+        // conta est ativa
+        if (status != StatusConta.ATIVA) {
+            throw new IllegalStateException("Conta não está ativa");
+        }
+        // valor não pode ser nullo
+        if (valor == null) {
+            throw new IllegalArgumentException("Valor não pode ser nulo!");
+        }
+        // valor não pode ser maior que zero
+        if (valor.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("Valor não pode ser menor que zero");
+        }
+        // maximo duas casas decimais
+        if (valor.scale() > 2) {
+            throw new IllegalArgumentException("Maximo até duas casas decimais");
+
+        }
+        // saldo suficiente
+        if (saldo.compareTo(valor) < 0) {
+            throw new IllegalStateException("Saldo abaixo de zero");
+
+        }
+        // limite de saque
+        if (valor.compareTo(RegrasBanco.LIMITE_SAQUE_DIARIO) > 0) {
+            throw new IllegalArgumentException("Valor excede o limite de saque");
         }
 
-        // saque autorizado
-        this.saldo -= valor;
-        this.transacoes.add("Saque: - R$ " + valor);
-
     }
 
-    public double consultarSaldo() {
-        // retornar saldo.
-        return this.saldo;
-
-    }
-
-    public void extrato() {
-        // retornar todas as transações
-        System.out.println("------EXTRATO DA CONTA------");
-        // Para cada String "T" dentro da lista de transações:
-        for (String t : transacoes) {
-            System.out.println(t); // im da vezprime a trasações
-
-        }
-        System.out.println("Saldo atual: R$ " + this.saldo);
-
-    }
-
-    public void registrarDeposito(double valor) {
-
+    public void sacar(BigDecimal valor) {
+        validarValorSaque(valor);
+        saldo.subtract(valor);
     }
 
 }
