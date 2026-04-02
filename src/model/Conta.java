@@ -124,4 +124,57 @@ public class Conta {
         saldo.subtract(valor);
     }
 
+    public void validarValorTrasferencia(BigDecimal valor, Conta contaDestino) {
+        // é nullo ou esta avazio
+        if (valor == null) {
+            throw new IllegalArgumentException("Valor não pode ser nullo.");
+        }
+        // o valor é valido? precisa ser acima de zero
+        if (valor.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("Valor não pode ser negativo!");
+        }
+        // verificar se as conta de destino existe
+        if (contaDestino == null) {
+            throw new IllegalArgumentException(" Conta de destino não existe!");
+        }
+        // valor é suficiente
+        if (this.saldo.compareTo(valor) < 0) {
+            throw new IllegalArgumentException("Saldo insuficiente");
+        }
+        // evtar trasferencia a se mesmo
+        if (this.equals(contaDestino)) {
+            throw new IllegalArgumentException(" não se pode trasferir para a propia conta");
+        }
+        // garantir que o limite diario não seja ultrapassado
+        if (valor.compareTo(RegrasBanco.LIMITE_TRASFERENCIA_DIARIO) > 0) {
+            throw new IllegalArgumentException("Limite de trasferencia diaria atingida!");
+
+        }
+        // garantir que o valor tenha apenas duas casas decimais
+        if (valor.scale() > 2) {
+            throw new IllegalArgumentException("Maximo até duas casa decimais");
+        }
+        // validar se a trasferecia não foge do padrão do comportamento do cliente
+
+    }
+
+    public void trasferir(BigDecimal valor, Conta contaDestino) {
+        // conta de destino está ativa
+        if (contaDestino.getStatus() != StatusConta.ATIVA) {
+            throw new IllegalArgumentException("A conta não está habita para receber trasferencia");
+
+        }
+        validarValorTrasferencia(valor, contaDestino);
+        // efetivar trasferencia
+        this.saldo = this.saldo.subtract(valor);
+        // adicionar a conta destino
+        contaDestino.saldo = contaDestino.saldo.add(valor);
+
+        // criar um objeto para guarda o historico de transações
+        Transacao transacao = new Transacao("TRANSFERENÇIA", valor, this.numero, contaDestino.numero);
+        // adicionar ao historico da conta
+        this.transacoes.add(transacao);
+
+    }
+
 }
